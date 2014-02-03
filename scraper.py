@@ -173,7 +173,7 @@ class scraper_tool:
 			post_rows.append(post_row)
 		return post_rows, comment_rows
 
-	def arr_to_string(arr):
+	def arr_to_string(self, arr):
 		new_rows = []
 		for p in arr:
 			new_row = []
@@ -193,7 +193,7 @@ class scraper_tool:
 			new_rows.append(new_row)
 		return new_rows
 	
-	def getCommentData(posts):
+	def getCommentData(self, posts):
 		comments = []
 		count = 1
 		for p in posts:
@@ -219,58 +219,58 @@ class scraper_tool:
 					comments.append(comm)
 		return comments
 
-def getLikes(post_id, wait=0):
-	num_likes = 0
-	like_obj = self.g.get_connections(post_id, "likes", limit=self.limit_num)
-	num_likes = len(like_obj['data'])
-	if wait > 0:
-		sleep(self.wait)
-	return num_likes
+	def getLikes(self, post_id, wait=0):
+		num_likes = 0
+		like_obj = self.g.get_connections(post_id, "likes", limit=self.limit_num)
+		num_likes = len(like_obj['data'])
+		if wait > 0:
+			sleep(self.wait)
+		return num_likes
 
-def getLikeData(posts):
-	num_likes_arr = []
-	like_posters = []
-	count = 1
-	for p in posts:
-		print "post #" + str(count)
-		count += 1
-		post_id = p['id']
-		if 'likes' in p.keys():
-			while True:
-				try:
-					num_likes = getLikes(post_id)
-				except facebook.GraphAPIError as gep:
-					print gep
-					token = raw_input("enter new token : " )
-					g = facebook.GraphAPI(token)
-				except urllib2.URLError as urlerr:
-					print urlerr
-					print "waiting 10 minutes at :"
-					print datetime.datetime.now()
-					sleep(1800)
-					g = facebook.GraphAPI(token)
-				except ValueError as ve:
-					print ve
-					sleep(180)
-				else:
-					break
-			num_likes_arr.append(num_likes)
-		else:
-			num_likes_arr.append(0)
-	return num_likes_arr
+	def getLikeData(self, posts):
+		num_likes_arr = []
+		like_posters = []
+		count = 1
+		for p in posts:
+			print "post #" + str(count)
+			count += 1
+			post_id = p['id']
+			if 'likes' in p.keys():
+				while True:
+					try:
+						num_likes = getLikes(post_id)
+					except facebook.GraphAPIError as gep:
+						print gep
+						token = raw_input("enter new token : " )
+						g = facebook.GraphAPI(token)
+					except urllib2.URLError as urlerr:
+						print urlerr
+						print "waiting 10 minutes at :"
+						print datetime.datetime.now()
+						sleep(1800)
+						g = facebook.GraphAPI(token)
+					except ValueError as ve:
+						print ve
+						sleep(180)
+					else:
+						break
+				num_likes_arr.append(num_likes)
+			else:
+				num_likes_arr.append(0)
+		return num_likes_arr
 
-def getComments(post_id):
-	''' for a post_id, look up all comments and get the comment_id, user_name, user_id, time, num_likes, and message '''
-	comments = []
-	comm_obj = self.g.get_connections(post_id, "comments", limit=self.limit_num)
-	for comm in comm_obj['data']:
-		comment = [post_id, comm['id'],
-				comm['from']['name'],
-				comm['from']['id'],
-				comm['created_time'],
-				comm['like_count'],
-				comm['message']]
-		comments.append(comment)
-	if self.wait > 0:
-		sleep(self.wait)
-	return comments
+	def getComments(self, post_id):
+		''' for a post_id, look up all comments and get the comment_id, user_name, user_id, time, num_likes, and message '''
+		comments = []
+		comm_obj = self.g.get_connections(post_id, "comments", limit=self.limit_num)
+		for comm in comm_obj['data']:
+			comment = [post_id, comm['id'],
+					comm['from']['name'],
+					comm['from']['id'],
+					comm['created_time'],
+					comm['like_count'],
+					comm['message']]
+			comments.append(comment)
+		if self.wait > 0:
+			sleep(self.wait)
+		return comments
