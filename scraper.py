@@ -10,6 +10,7 @@ import json
 from time import sleep
 import urllib2
 import datetime
+from requests import ConnectionError
 
 global ACCESS_TOKEN
 global confession_id
@@ -30,6 +31,7 @@ class scraper_tool:
 	wait = 0 # amount of time in seconds to wait in between query tasks
 			# good for avoiding accidentally exceeding the API request limit
 	limit_num = 100 # number of requests pulled from each query
+	posts = []
 
 	def setPageId(self, ID):
 		self.page_id = ID
@@ -64,47 +66,65 @@ class scraper_tool:
 		fileOut = open('fileName', 'wb')
 		fileOut.write(self.long_token)
 
-	def get_data(self):
+	def get_data(self, limit=None):
 		''' gets general data from site '''
 		num_pages = 1
-		posts = []
+		self.posts = []
 		# get initial page
 		page1 = self.g.get_connections(self.page_id, "feed", limit=self.limit_num)
-		posts += page1['data']
+		self.posts += page1['data']
 		nextString = page1['paging']['next']
-		next = nextString.split("until=")[-1]
+		nextString_dict = {x.split("=")[0] : x.split("=")[1] for x in nextString.split("&")}
+		next = nextString_dict['until']
+		lockout = 0
+		c = 0
 		while True:
 			print "page : " + str(num_pages)
-			sleep(1)
+
+			if limit:
+				if len(self.posts) > limit:
+					return self.posts
 			while True:
+				print "c : %s" % c
+				print "lockout time : %s seconds" % lockout
+				sleep(lockout)
 				try:
 					page = self.g.get_connections(self.page_id, "feed", limit=self.limit_num, until=next)
 				except facebook.GraphAPIError as gep:
 					print gep
-					token = raw_input("enter new token : " )
-					g = facebook.GraphAPI(token)
+					c += 1
+					lockout = int(.5*((2**c) - 1))
+					print "c : %s" % c
+					print "lockout time : %s seconds" % lockout
+					continue
+					#token = raw_input("enter new token : " )
+					#g = facebook.GraphAPI(token)
 				except urllib2.URLError as urlerr:
 					print urlerr
 					print "waiting 10 minutes at :"
 					print datetime.datetime.now()
 					sleep(1800)
 					g = facebook.GraphAPI(token)
+				except ConnectionError as ce:
+					print ce
+					return {"posts" : self.posts, "next" : next, "error" : ce}
 				else:
 					break
 			if 'data' in page.keys():
-				posts += page['data']
+				self.posts += page['data']
 				num_pages+=1
 			else:
 				break
 			if 'paging' in page.keys():
 				if 'next' in page['paging']:
 					nextString = page['paging']['next']
-					next = nextString.split("until=")[-1]
+					nextString_dict = {x.split("=")[0] : x.split("=")[1] for x in nextString.split("&")}
+					next = nextString_dict['until']
 				else:
 					break
 			else:
 				break
-		return posts
+		return self.posts
 
 	def getArr(self, posts=0):
 		'''
