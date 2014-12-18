@@ -13,25 +13,28 @@ import datetime
 from requests import ConnectionError
 
 global ACCESS_TOKEN
-global confession_id
-confession_id = '618332588183265'
 global APP_ID
-APP_ID = "463500207102372"
+APP_ID = None
 global APP_SECRET
-APP_SECRET = "863524a429198f237fc09d3dbb2f5c04"
-
-class scraper_tool:
+APP_SECRET = None
+class fbMiner:
 	app_id = APP_ID # from the facebook app development site
 	app_secret = APP_SECRET # from the facebook app development site
 	user_token = '' # short token that generally expires in 2 hours
 	g = facebook.GraphAPI()
 	expire = ''  # sometimes you get back an expiration date with setLongToken
 	long_token = '' #token that expires in 60 days
-	page_id = confession_id #the id of the page that will be scraped
+	page_id = None #the id of the page that will be scraped
 	wait = 0 # amount of time in seconds to wait in between query tasks
 			# good for avoiding accidentally exceeding the API request limit
 	limit_num = 100 # number of requests pulled from each query
+	                # good to limit this in order to avoid being throttled by FB
 	posts = []
+
+	def setAppCredentialsFromJSON(self, json_credentials):
+		creds = json.loads(json_credentials)
+		self.app_id = creds['APP_ID']
+		self.app_secret = creds['APP_SECRET']
 
 	def setPageId(self, ID):
 		self.page_id = ID
@@ -55,7 +58,7 @@ class scraper_tool:
 	def getGraphAPI(self):
 		''' use this to get the facebook.GraphAPI() object back to use directly'''
 		return self.g
-	
+
 	def setLongTokenFromFile(self, fileName):
 		fileIn = open(fileName, 'rb')
 		lt = fileIn.readlines()[0]
@@ -212,7 +215,7 @@ class scraper_tool:
 				new_row.append(stringVal)
 			new_rows.append(new_row)
 		return new_rows
-	
+
 	def getCommentData(self, posts):
 		comments = []
 		count = 1
